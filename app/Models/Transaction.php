@@ -41,19 +41,4 @@ class Transaction extends Model
         return $this->belongsTo(User::class, 'related_user_id');
     }
 
-    /**
-     * Является ли транзакция зачислением
-     */
-    public function isCredit(): bool
-    {
-        return $this->status->isCredit();
-    }
-
-    /**
-     * Является ли транзакция списанием
-     */
-    public function isDebit(): bool
-    {
-        return $this->status->isDebit();
-    }
 }
