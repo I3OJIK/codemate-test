@@ -3,17 +3,18 @@
 namespace App\DTOs\Requests;
 
 use App\DTOs\DTO;
+use Spatie\LaravelData\Attributes\Validation\Different;
 use Spatie\LaravelData\Attributes\Validation\Exists;
 use Spatie\LaravelData\Attributes\Validation\Max;
 use Spatie\LaravelData\Attributes\Validation\Min;
 
-class DepositDto extends DTO
+class TransferDto extends DTO
 {
     public function __construct(
         #[Exists('users', 'id')]
         public int $fromUserId,
 
-        #[Exists('users', 'id')]
+        #[Exists('users', 'id'), Different('fromUserId')]
         public int $toUserId,
 
         #[Min(0)]
@@ -22,4 +23,13 @@ class DepositDto extends DTO
         #[Max(100)]
         public ?string $comment = null,
     ) {}
+
+    public static function messages(): array
+    {
+        return [
+            'from_user_id.exists' => 'The selected sender user ID  not found',
+            'to_user_id.exists' => 'The selected recipient user ID not found',
+            'to_user_id.different' => 'The recipient user ID must be different from the sender user ID',
+        ];
+    }
 }

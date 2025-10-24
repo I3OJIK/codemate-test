@@ -33,14 +33,14 @@ class ApiExceptionHandler extends Handler
          // Модель не найдена
          if ($e instanceof ModelNotFoundException) {
             return response()->json([
-                'message' => 'Ресурс не найден',
+                'message' => $e->getMessage(),
             ], 404);
         }
 
         // Валидация
         if ($e instanceof ValidationException) {
             return response()->json([
-                'message'   => 'Ошибка валидации',
+                'message'   => 'Validation error',
                 'errors' => $e->errors(),
             ], 422);
         }
