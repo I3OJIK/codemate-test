@@ -5,9 +5,7 @@ namespace App\Http\Controllers;
 use App\DTOs\Models\TransactionDto;
 use App\DTOs\Requests\AccountTransactionDto;
 use App\DTOs\Requests\TransferDto;
-use App\Models\User;
 use App\Services\TransactionService;
-use Illuminate\Http\Request;
 
 class TransactionController extends Controller
 {
@@ -29,6 +27,13 @@ class TransactionController extends Controller
         return TransactionDto::from($transaction);
     }
 
+    /**
+     * Снятие средств пользователя
+     * 
+     * @param AccountTransactionDto $data
+     * 
+     * @return TransactionDto
+     */
     public function withdraw(AccountTransactionDto $data): TransactionDto
     {
         $transaction = $this->transactionService->withdraw($data);
@@ -36,6 +41,13 @@ class TransactionController extends Controller
         return TransactionDto::from($transaction);
     }
 
+    /**
+     * Перевод средств 
+     * 
+     * @param TransferDto $data
+     * 
+     * @return TransactionDto
+     */
     public function transfer(TransferDto $data): TransactionDto
     {
         $transaction = $this->transactionService->transfer($data);

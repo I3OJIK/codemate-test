@@ -13,6 +13,13 @@ class BalanceController extends Controller
         private BalanceService $balanceService,
     ) {}
 
+    /**
+     * Баланс пользователя
+     * 
+     * @param int $userId
+     * 
+     * @return BalanceDto
+     */
     public function show(int $userId): BalanceDto
     {
         $balance = $this->balanceService->getBalance($userId);

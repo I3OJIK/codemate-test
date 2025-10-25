@@ -2,18 +2,13 @@
 
 namespace App\Services;
 
-use App\DTOs\Models\TransactionDto;
 use App\DTOs\Requests\AccountTransactionDto;
 use App\DTOs\Requests\TransferDto;
-use App\Enum\TransactionStatus as EnumTransactionStatus;
-use App\Enums\TransactionStatus;
+use App\Enum\TransactionStatus;
 use App\Exceptions\InsufficientFundsException;
 use App\Models\Transaction;
-use App\Models\Balance;
-use App\Models\User;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\DB;
-use InvalidArgumentException;
 
 class TransactionService
 {
@@ -32,20 +27,19 @@ class TransactionService
     public function deposit(AccountTransactionDto $data): Transaction
     {
        return DB::transaction(function () use ($data) {
-            $balance = $this->balanceService->lockOrCreateBalance($data->userId);
+            $balance = $this->balanceService->getOrCreateLockedBalance($data->userId);
 
             $transaction = Transaction::create([
                 'user_id' => $data->userId,
-                'status' => EnumTransactionStatus::DEPOSIT,
+                'status' => TransactionStatus::DEPOSIT,
                 'amount' => $data->amount,
                 'comment' => $data->comment,
-                'created_at' => now()
             ]);
 
             $this->balanceService->updateBalance($balance, $data->amount, true);
 
             return $transaction;
-        });
+        }, 3);
     }
 
     /**
@@ -64,16 +58,15 @@ class TransactionService
 
             $transaction = Transaction::create([
                 'user_id' => $data->userId,
-                'status' => EnumTransactionStatus::WITHDRAW,
+                'status' => TransactionStatus::WITHDRAW,
                 'amount' => $data->amount,
                 'comment' => $data->comment,
-                'created_at' => now()
             ]);
 
             $this->balanceService->updateBalance($balance, $data->amount, false);
 
             return $transaction;
-        });
+        }, 3);
     }
 
     /**
@@ -88,34 +81,40 @@ class TransactionService
     public function transfer(TransferDto $data): Transaction
     {
        return DB::transaction(function () use ($data) {
-            // блокировка баланса
-            $fromBalance = $this->balanceService->lockBalance($data->fromUserId);
-            $toBalance = $this->balanceService->lockOrCreateBalance($data->toUserId);
+            // сортировка user_id(для уменшения шансов возникновение дедлоков)
+            $balances = [$data->fromUserId, $data->toUserId];
+            sort($balances);
+
+            foreach ($balances as $userId) {
+                $lockedBalances[$userId] = $this->balanceService->lockBalance($userId);
+            }
+            $fromBalance = $lockedBalances[$data->fromUserId];
+            $toBalance = $lockedBalances[$data->toUserId];
 
             $this->balanceService->updateBalance($fromBalance, $data->amount, false);
             $this->balanceService->updateBalance($toBalance, $data->amount, true);
 
-            // Списание у отправителя
+            // Транзакция списания у отправителя
             $out = Transaction::create([
                 'user_id' => $data->fromUserId,
                 'related_user_id' => $data->toUserId,
-                'status' => EnumTransactionStatus::TRANSFER_OUT,
+                'status' => TransactionStatus::TRANSFER_OUT,
                 'amount' => $data->amount,
                 'comment' => $data->comment,
-                'created_at' => now()
             ]);
 
-            // Зачисление у получателя
+            // Транзакция зачисления у получателя
             Transaction::create([
                 'user_id' => $data->toUserId,
                 'related_user_id' => $data->fromUserId,
-                'status' => EnumTransactionStatus::TRANSFER_IN,
+                'status' => TransactionStatus::TRANSFER_IN,
                 'amount' => $data->amount,
                 'comment' => $data->comment,
-                'created_at' => now()
             ]);
             return $out;
-        });
+        }, 3);
     }
+
+
 
 }

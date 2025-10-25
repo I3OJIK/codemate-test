@@ -48,6 +48,20 @@ services:
       - db-network
     env_file:
       .env
+  psqltest:
+    image: postgres:17.6
+    container_name: psqltest
+    restart: always
+    ports:
+      - "${DB_EXTERNAL_PORT:-3009}:5432"
+    environment:
+      POSTGRES_DB: ${DB_DATABASE}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    networks:
+      - db-network
+    env_file:
+      .env
 
 networks:
   db-network:

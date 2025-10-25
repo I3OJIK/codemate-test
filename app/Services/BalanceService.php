@@ -2,16 +2,9 @@
 
 namespace App\Services;
 
-use App\DTOs\Requests\AccountTransactionDto;
-use App\Enum\TransactionStatus as EnumTransactionStatus;
-use App\Enums\TransactionStatus;
 use App\Exceptions\InsufficientFundsException;
-use App\Models\Transaction;
 use App\Models\Balance;
-use App\Models\User;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
-use Illuminate\Support\Facades\DB;
-use InvalidArgumentException;
 
 class BalanceService
 {
@@ -50,11 +43,11 @@ class BalanceService
             throw new InsufficientFundsException("Insufficient funds");
         }
 
-        $balance->amount = $isDeposit
-            ? bcadd($balance->amount, $amount, 2)
-            : bcsub($balance->amount, $amount, 2);
-
-        $balance->save();
+        if ($isDeposit) {
+            $balance->increment('amount', $amount);
+        } else {
+            $balance->decrement('amount', $amount);
+        }
     }
 
     /**
@@ -71,7 +64,7 @@ class BalanceService
             ->first();
             
         if(!$balance){
-           throw new ModelNotFoundException("Balance for user not found");
+           throw new ModelNotFoundException("Balance for the specified user not found");
         };
 
         return $balance;
@@ -84,7 +77,7 @@ class BalanceService
      * @return Balance
      * @throws ModelNotFoundException
      */
-    public function lockOrCreateBalance(int $userId): Balance
+    public function getOrCreateLockedBalance(int $userId): Balance
     {
         Balance::firstOrCreate(['user_id' => $userId]);
 

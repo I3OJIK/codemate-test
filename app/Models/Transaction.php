@@ -8,7 +8,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Transaction extends Model
 {
-    public $timestamps = false;
 
     protected $fillable = [
         'user_id',
@@ -17,6 +16,7 @@ class Transaction extends Model
         'amount',
         'comment',
         'created_at',
+        'updated_at',
     ];
 
     protected $casts = [

@@ -18,7 +18,7 @@ return new class extends Migration
             $table->decimal('amount', 19, 2);
             $table->string('comment')->nullable();
             $table->foreignId('related_user_id')->nullable()->constrained('users','id')->restrictOnDelete(); 
-            $table->timestamp('created_at')->nullable(false)->useCurrent();
+            $table->timestamps();
         });
     }
 
