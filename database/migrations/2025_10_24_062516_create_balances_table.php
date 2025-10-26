@@ -11,9 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('users', function (Blueprint $table) {
+        Schema::create('balances', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
+            $table->foreignId('user_id')->unique()->constrained()->restrictOnDelete();
+            $table->decimal('amount', 19, 2)->default(0);
         });
     }
 
@@ -22,6 +23,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('users');
+        Schema::dropIfExists('balances');
     }
 };
