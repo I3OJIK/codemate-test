@@ -1,61 +1,102 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Тестовое задание для Codemate Team
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+## Архитектура проекта
 
-## About Laravel
+Проект построен по принципу **Service Layer** с использованием **DTO**.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+Основные слои:
+- **Controllers** - принимают HTTP-запросы и преобразуют их в DTO.
+- **DTOs** - передают данные между слоями приложения:
+  - используются вместо Laravel Request во входных данных;
+  - обеспечивают валидацию и типизацию;
+  - формируют ответные объекты.
+- **Services** - содержат бизнес-логику (баланс, переводы, транзакции).
+- **Models (Eloquent)** - работают напрямую с базой данных.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+---
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Cервисы
 
-## Learning Laravel
+### `BalanceService`
+Сервис для работы с балансами пользователей.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+**Функциональность:**
+- Получение текущего баланса (`getBalance`)
+- Обновление баланса (`updateBalance`)
+- Блокировка баланса с помощью `lockForUpdate()` (`lockBalance`)
+- Создание баланса при отсутствии и его блокировка (`getOrCreateLockedBalance`)
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+**Обработка ошибок:**
+- При отсутствии баланса у пользователя - `ModelNotFoundException`
+- При недостатке средств - `InsufficientFundsException`
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+---
 
-## Laravel Sponsors
+### `TransactionService`
+Сервис для создания и обработки транзакций пользователей.
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+**Основные методы:**
 
-### Premium Partners
+| Метод | DTO | Описание |
+|--------|-----|-----------|
+| `deposit(InternalTransactionDto $data)` | `InternalTransactionDto` | Пополнение счёта |
+| `withdraw(InternalTransactionDto $data)` | `InternalTransactionDto` | Снятие средств |
+| `transfer(TransferDto $data)` | `TransferDto` | Перевод между пользователями |
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+---
 
-## Contributing
+## DTO 
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### Входящие DTO
 
-## Code of Conduct
+| DTO | Назначение|
+|------|-------------|
+| `InternalTransactionDto` | Используется для `deposit()` и `withdraw()`|
+| `TransferDto` | Используется для `transfer()` |
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+В DTO происходит обработка большинства ошибок:
+- Проверка типа.
+- Проверка обязательных полей.
+- Проверка существования пользователя с данным ID в БД.
+- Проверка что amount положительное и не равно 0.
+- Проверка что при переводе from_user_id и to_user_id имеют разные ID.
 
-## Security Vulnerabilities
+---
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+### Исходящие DTO
 
-## License
+После успешной операции сервис возвращает **информацию о транзакции** в виде DTO.
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+**Пример выходных данных:**
+```json
+{
+    "id": 42,
+    "user_id": 1,
+    "related_user_id": 2,
+    "status": "TRANSFER_OUT",
+    "amount": 1000,
+    "comment": "Перевод пользователю #2",
+    "created_at": "2025-10-25T12:00:00Z",
+    "updated_at": "2025-10-25T12:00:00Z"
+}
+```
+---
+## Setup
+
+### Установка проекта:
+```bash
+git clone https://github.com/I3OJIK/codemate-test.git test  # Клонируем этот проект в папку test
+cd test  # переходим в папку
+```
+
+### Разворачивание проекта:
+
+Если порты, указанные в `docker-compose.yaml` (3007 и 3008 и 3009), свободны - можно запуститься одной командой:
+```bash
+make setup
+```
+Если нужно изменить порты:
+```bash
+# Добавляем в .env.example NGINX_EXTERNAL_PORT и DB_EXTERNAL_PORT и TEST_DB_EXTERNAL_PORT
+```
+

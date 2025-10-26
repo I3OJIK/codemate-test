@@ -53,7 +53,7 @@ services:
     container_name: psqltest
     restart: always
     ports:
-      - "${DB_EXTERNAL_PORT:-3009}:5432"
+      - "${TEST_DB_EXTERNAL_PORT:-3009}:5432"
     environment:
       POSTGRES_DB: ${DB_DATABASE}
       POSTGRES_USER: ${DB_USERNAME}
