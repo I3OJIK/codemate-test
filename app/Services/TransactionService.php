@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\DTOs\Requests\AccountTransactionDto;
+use App\DTOs\Requests\InternalTransactionDto;
 use App\DTOs\Requests\TransferDto;
 use App\Enum\TransactionStatus;
 use App\Exceptions\InsufficientFundsException;
@@ -19,12 +19,12 @@ class TransactionService
     /**
      * Зачисление средств пользователю
      * 
-     * @param AccountTransactionDto $data
+     * @param InternalTransactionDto $data
      * 
      * @return Transaction
      * @throws ModelNotFoundException
      */
-    public function deposit(AccountTransactionDto $data): Transaction
+    public function deposit(InternalTransactionDto $data): Transaction
     {
        return DB::transaction(function () use ($data) {
             $balance = $this->balanceService->getOrCreateLockedBalance($data->userId);
@@ -45,13 +45,13 @@ class TransactionService
     /**
      * Снятие средств с баланса пользователя
      * 
-     * @param AccountTransactionDto $data
+     * @param InternalTransactionDto $data
      * 
      * @return Transaction
      * @throws ModelNotFoundException
      * @throws InsufficientFundsException
      */
-    public function withdraw(AccountTransactionDto $data): Transaction
+    public function withdraw(InternalTransactionDto $data): Transaction
     {
        return DB::transaction(function () use ($data) {
             $balance = $this->balanceService->lockBalance($data->userId);
@@ -91,6 +91,7 @@ class TransactionService
             $fromBalance = $lockedBalances[$data->fromUserId];
             $toBalance = $lockedBalances[$data->toUserId];
 
+            //обновление баланса у отправителя и получателя
             $this->balanceService->updateBalance($fromBalance, $data->amount, false);
             $this->balanceService->updateBalance($toBalance, $data->amount, true);
 

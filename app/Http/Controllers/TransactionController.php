@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\DTOs\Models\TransactionDto;
-use App\DTOs\Requests\AccountTransactionDto;
+use App\DTOs\Requests\InternalTransactionDto;
 use App\DTOs\Requests\TransferDto;
 use App\Services\TransactionService;
 
@@ -16,11 +16,11 @@ class TransactionController extends Controller
     /**
      * Пополнение счета пользователя
      * 
-     * @param AccountTransactionDto $data
+     * @param InternalTransactionDto $data
      * 
      * @return TransactionDto
      */
-    public function deposit(AccountTransactionDto $data): TransactionDto
+    public function deposit(InternalTransactionDto $data): TransactionDto
     {
         $transaction = $this->transactionService->deposit($data);
 
@@ -30,11 +30,11 @@ class TransactionController extends Controller
     /**
      * Снятие средств пользователя
      * 
-     * @param AccountTransactionDto $data
+     * @param InternalTransactionDto $data
      * 
      * @return TransactionDto
      */
-    public function withdraw(AccountTransactionDto $data): TransactionDto
+    public function withdraw(InternalTransactionDto $data): TransactionDto
     {
         $transaction = $this->transactionService->withdraw($data);
 

@@ -5,8 +5,8 @@ namespace App\DTOs\Requests;
 use App\DTOs\DTO;
 use Spatie\LaravelData\Attributes\Validation\Different;
 use Spatie\LaravelData\Attributes\Validation\Exists;
+use Spatie\LaravelData\Attributes\Validation\GreaterThan;
 use Spatie\LaravelData\Attributes\Validation\Max;
-use Spatie\LaravelData\Attributes\Validation\Min;
 
 class TransferDto extends DTO
 {
@@ -17,7 +17,7 @@ class TransferDto extends DTO
         #[Exists('users', 'id'), Different('fromUserId')]
         public int $toUserId,
 
-        #[Min(0)]
+        #[GreaterThan(0)]
         public float $amount,
 
         #[Max(100)]

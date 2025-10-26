@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Services;
 
-use App\DTOs\Requests\AccountTransactionDto;
+use App\DTOs\Requests\InternalTransactionDto;
 use App\DTOs\Requests\TransferDto;
 use App\Enum\TransactionStatus;
 use App\Exceptions\InsufficientFundsException;
@@ -34,7 +34,7 @@ class TransactionServiceTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $dto = new AccountTransactionDto(
+        $dto = new InternalTransactionDto(
             userId: $user->id,
             amount: 1000,
             comment: 'Test deposit'
@@ -65,7 +65,7 @@ class TransactionServiceTest extends TestCase
             'amount' => 1000.55,
         ]);
 
-        $dto = new AccountTransactionDto(
+        $dto = new InternalTransactionDto(
             userId: $user->id,
             amount: 1000,
             comment: 'Test withdraw'
